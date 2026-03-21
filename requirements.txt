@@ -1,0 +1,39 @@
+#général
+numpy
+
+#tts
+piper-tts
+
+#stt
+vosk
+pyaudio
+
+#visage
+mtcnn
+tensorflow
+opencv-python
+Pillow
+
+#reconnaissance émotion
+--extra-index-url https://download.pytorch.org/whl/cpu
+emotiefflib
+torch==2.8.0
+torchvision
+onnxruntime
+
+#capteur entre QT et raspberry
+Flask
+
+#dossier
+pyyaml
+
+#test
+pytest 
+pytest-mock 
+
+#affichage
+customtkinter
+
+#Gestion ROSpy
+paramiko
+rospkg

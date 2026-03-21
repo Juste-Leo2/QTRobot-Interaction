@@ -1,0 +1,47 @@
+# .github/workflows/ci_win.yml
+name: CI Windows - Light Models Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Cache AI models
+        id: cache-models
+        uses: actions/cache@v4
+        with:
+          path: |
+            models/
+            !models/**/*.tmp
+          key: ${{ runner.os }}-models-lite-${{ hashFiles('config/config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-models-lite-
+            
+      - name: Download models (if cache missed)
+        if: steps.cache-models.outputs.cache-hit != 'true'
+        run: |
+          python src/download_model.py
+          
+      - name: Run tests
+        run: pytest -v
