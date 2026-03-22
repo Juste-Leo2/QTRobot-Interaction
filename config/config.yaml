@@ -8,14 +8,13 @@ models:
     en_amy: "models/tts_piper/en_US-amy-medium.onnx"
     en_amy_json: "models/tts_piper/en_US-amy-medium.onnx.json"
 
-
 testing:
   output_dir: "tests/output"
   run_integration_tests: true
 
 # --- COMMANDES ROBOT QT ---
 qt_robot:
-  default_velocity: 20  # Vitesse par défaut (0-100)
+  default_velocity: 20
   gestures:
     - "QT/hi"
     - "QT/bye"
@@ -32,3 +31,18 @@ qt_robot:
     - "QT/angry"
     - "QT/surprise"
     - "QT/neutral"
+
+# --- VESTE RASPBERRY PI ---
+vest:
+  ip: "192.168.100.2"
+  user: "pi"
+  password: "raspberry"
+  script_path: "/home/pi/vest/inferenceQT0526.py"
+  venv_path: "/home/pi/vest/venv/bin/activate"
+  port: 65432
+
+# --- SCÉNARIOS ---
+scenarios:
+  emotion_streak_required: 5      # Détections consécutives pour valider une émotion
+  gesture_streak_required: 3      # Détections consécutives pour valider un geste
+  emotion_confidence_threshold: 0.5
