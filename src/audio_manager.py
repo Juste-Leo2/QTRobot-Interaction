@@ -68,20 +68,21 @@ class AudioManager:
         if self.qt_mode and self.ros_client:
             self.ros_client.move_head(yaw, pitch)
 
-    def show_image(self, image_name):
-        """Affiche une image sur l'écran du robot."""
-        print(f"🖼️  [ROBOT] Affichage image → {image_name}")
-        if self.qt_mode and self.ros_client:
-            self.ros_client.show_image(image_name)
-
-    def show_text(self, text):
-        """Affiche du texte sur l'écran du robot."""
-        print(f"📝 [ROBOT] Affichage texte → \"{text}\"")
-        if self.qt_mode and self.ros_client:
-            self.ros_client.show_text(text)
-
     def wakeup(self):
         """Réveille les moteurs du robot (mode QT uniquement)."""
         print("🦾 [ROBOT] Wakeup moteurs")
         if self.qt_mode and self.ros_client:
             self.ros_client.wakeup()
+
+
+    def screen_off(self):
+            """Éteint l'écran du robot (mode QT uniquement)."""
+            print("🌑 [ROBOT] Éteindre l'écran")
+            if self.qt_mode and self.ros_client:
+                self.ros_client.screen_off()
+
+    def screen_on(self):
+        """Allume l'écran du robot (mode QT uniquement)."""
+        print("☀️ [ROBOT] Allumer l'écran")
+        if self.qt_mode and self.ros_client:
+            self.ros_client.screen_on()

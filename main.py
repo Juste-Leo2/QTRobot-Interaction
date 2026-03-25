@@ -58,11 +58,11 @@ def main():
         # Config Raspberry Pi pour la veste
         print("\n🧤 Initialisation Raspberry Pi (veste)...")
         raspberry = RaspberryManager(
-            ip="192.168.100.2",        # IP du Raspberry
-            user="pi",
-            password="raspberry",
-            script_path="/home/pi/vest/inferenceQT0526.py",
-            venv_path="/home/pi/vest/venv/bin/activate",
+            ip="192.168.100.3",        # IP du Raspberry
+            user="qt",
+            password="qtrobot",
+            script_path="/home/qt/Documents/inferenceQT0526.py",
+            venv_path="/home/qt/Documents/.venv/bin/activate",
             port=65432
         )
 

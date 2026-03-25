@@ -80,3 +80,36 @@ class FileTransfer:
         except Exception as e:
             print(f"[Transfer] ❌ Erreur envoi : {e}")
             return None
+
+    def control_screen(self, payload):
+        """Allume ou éteint l'écran du robot via SSH"""
+        if not self.ssh_available: 
+            print("[Transfer] ⚠️ Impossible de contrôler l'écran, SSH non disponible.")
+            return False
+
+        client = None
+        try:
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            
+            client.connect(
+                self.hostname, 
+                username=self.username, 
+                password=self.password,
+                timeout=5.0,
+                look_for_keys=False,
+                allow_agent=False
+            )
+            
+            if payload == "off":
+                client.exec_command("export DISPLAY=:0 && xset dpms force off")
+            elif payload == "on":
+                client.exec_command("export DISPLAY=:0 && xset dpms force on")
+                
+            return True
+
+        except Exception as e:
+            print(f"[Transfer] ❌ Erreur contrôle écran : {e}")
+            return False
+        finally:
+            if client: client.close()

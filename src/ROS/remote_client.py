@@ -57,17 +57,17 @@ class RemoteRosClient:
 
     def gesture(self, name): self._send("gesture", name)
     def emotion(self, name): self._send("emotion", name)
-    def show_text(self, text): self._send("show_text", text)
     def move_head(self, yaw, pitch): 
         # On envoie une string simple "0.5,0.2"
         self._send("head", f"{yaw},{pitch}")
 
-    def show_image(self, filename):
-        if filename.startswith("QT/"):
-            self._send("show_image", filename)
-        elif os.path.exists(filename):
-            remote_path = self.transfer.send(filename, "stream_image")
-            if remote_path: self._send("show_image", remote_path)
+    def screen_off(self):
+        """Éteint l'écran du robot en passant par le SSH du FileTransfer"""
+        self.transfer.control_screen("off")
+
+    def screen_on(self):
+        """Allume l'écran du robot en passant par le SSH du FileTransfer"""
+        self.transfer.control_screen("on")
 
     def play(self, filename):
         if filename.startswith("QT/"):

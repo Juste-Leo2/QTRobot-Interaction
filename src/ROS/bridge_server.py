@@ -142,12 +142,6 @@ def command():
             else:
                 play_audio_service(payload)
 
-        elif cmd == "show_text":
-            run_rostopic_blocking("/qt_robot/screen/show_text", "std_msgs/String", payload)
-
-        elif cmd == "show_image":
-            run_rostopic_blocking("/qt_robot/screen/show_image", "std_msgs/String", payload)
-
         return jsonify({"res": "ok"})
     except Exception as e: return jsonify({"error": str(e)}), 500
 

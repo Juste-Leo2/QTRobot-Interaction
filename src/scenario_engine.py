@@ -21,8 +21,8 @@ class ScenarioState(Enum):
 
 
 # ─── Seuils de détection ───
-EMOTION_STREAK_REQUIRED = 5    # Nombre de détections consécutives pour valider l'émotion
-GESTURE_STREAK_REQUIRED = 3    # Nombre de détections consécutives pour valider le geste
+EMOTION_STREAK_REQUIRED = 3    # Nombre de détections consécutives pour valider l'émotion
+GESTURE_STREAK_REQUIRED = 1    # Nombre de détections consécutives pour valider le geste
 EMOTION_POLL_INTERVAL = 0.1    # Intervalle entre les vérifications (secondes)
 GESTURE_POLL_INTERVAL = 0.5    # Intervalle entre les vérifications geste
 
@@ -55,6 +55,7 @@ class ScenarioEngine:
         self.gesture_streak = 0
         self.last_emotion_seen = None
         self.last_gesture_seen = None
+        self.audio.screen_on()
 
     def update_emotion(self, smoothed_emotion):
         """Appelé par le thread vidéo pour envoyer une nouvelle émotion détectée."""
@@ -98,7 +99,6 @@ class ScenarioEngine:
         # ── DÉBUT ──
         self.state = ScenarioState.DEBUT
         self._update_ui("📖 DÉBUT — L'enfant lit un passage triste d'un livre")
-        self.audio.show_text("Lis-moi une histoire...")
         time.sleep(2)
 
         # ── ÉMOTION ──
@@ -193,12 +193,16 @@ class ScenarioEngine:
     def _run_scenario_3(self):
         target_gesture = "Pincement"
 
-        # ── DÉBUT ──
+    # ── DÉBUT ──
         self.state = ScenarioState.DEBUT
-        self._update_ui("😴 DÉBUT — Le robot est en mode veille (tête baissée)")
+        self._update_ui("😴 DÉBUT — Le robot est en mode veille (tête baissée, écran éteint)")
+        
+        # 1. On éteint l'écran tout de suite
+        self.audio.screen_off()
+        
         # Robot dort : tête baissée, yeux fermés
         self.audio.play_emotion("QT/neutral")
-        self.audio.move_head(0, 15.0)  # Tête penchée vers le bas (en degrés)
+        self.audio.move_head(0, 70)  # Tête penchée vers le bas (en degrés)
         time.sleep(2)
 
         # ── EXPLORATION LIBRE ──
@@ -207,9 +211,19 @@ class ScenarioEngine:
             "🔍 EXPLORATION LIBRE — L'enfant peut frotter, parler... "
             f"En attente de '{target_gesture}' ({GESTURE_STREAK_REQUIRED}× consécutives)"
         )
+        
+        # Le robot attend de détecter le pincement
         self._wait_for_gesture(target_gesture)
         if not self.running:
             return
+
+        # ── LE GESTE EST DÉTECTÉ ──
+        
+        # 2. Le pincement a été vu, on rallume l'écran !
+        self.audio.screen_on()
+        
+        # (Optionnel) Tu peux rajouter une petite émotion de réveil juste après
+        # self.audio.play_emotion("QT/happy")
 
         # ── RÉACTION DU ROBOT ──
         self.state = ScenarioState.REACTION
