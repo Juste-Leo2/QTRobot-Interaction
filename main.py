@@ -18,10 +18,11 @@ from src.ui import UI
 from src.camera_manager import CameraManager
 from src.vest_manager import VestManager
 from src.audio_manager import AudioManager
-from src.scenario_engine import ScenarioEngine
+from src.scenario_engine import ScenarioEngine, ScenarioState
 from src.data_acquisition.emotions import EmotionAnalyzer
 from src.data_acquisition.mtcnn_function import detect_faces
 from src.utils import redimensionner_image_pour_ui
+from src.face_tracking import FaceTracker
 
 
 def parse_args():
@@ -30,7 +31,14 @@ def parse_args():
                         help="Numéro du scénario (1, 2 ou 3)")
     parser.add_argument("--QT", action="store_true",
                         help="Active le mode QT Robot (ROS + Raspberry Pi)")
-    return parser.parse_args()
+    parser.add_argument("--follow", action="store_true",
+                        help="Active le suivi du visage du robot (nécessite --QT)")
+    args = parser.parse_args()
+    
+    if args.follow and not args.QT:
+        parser.error("L'argument --follow nécessite obligatoirement l'argument --QT pour fonctionner.")
+        
+    return args
 
 
 def main():
@@ -94,6 +102,13 @@ def main():
         ui_callback=ui_status_callback
     )
 
+    # ─── Suivi de visage ───
+    tracker = None
+    if args.follow:
+        tracker = FaceTracker(audio)
+        tracker.start()
+        print("👀 [TRACKING] Suivi de visage activé.")
+
     # ─── Démarrage veste ───
     vest.start()
 
@@ -156,6 +171,18 @@ def main():
 
                 except Exception as e:
                     print(f"⚠️ Erreur détection : {e}")
+
+            # Gestion du Face Tracking
+            if tracker:
+                # Si le robot fait autre chose (réaction, conclusion, début), on arrête le suivi
+                if engine.state in [ScenarioState.DEBUT, ScenarioState.REACTION, ScenarioState.CONCLUSION]:
+                    tracker.stop()
+                else:
+                    tracker.start()
+                
+                if frame_counter % DETECTION_SKIP == 0 and last_box:
+                    h, w, _ = frame.shape
+                    tracker.update(last_box, frame_w=w, frame_h=h)
 
             # Dessiner le rectangle sur CHAQUE frame (pas seulement les frames de détection)
             if last_box:
