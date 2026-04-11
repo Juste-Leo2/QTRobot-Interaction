@@ -56,7 +56,7 @@ uv run main.py --QT --scenario 1
 Je tiens à remercier :
 - Mes tuteurs de projet (Madalina Croitoru et Ganesh Gowrishankar)
 - La communauté open source : [Piper TTS](https://github.com/rhasspy/piper), [PyTorch](https://pytorch.org/)
-- L'équipe de Lux AI pour le développement de la veste
+- L'équipe de Lux AI pour le développement du robot QT
 - L'Université d'Aalto en Finlande pour avoir fourni la veste haptique pour ces recherches
 
 ## Licence
