@@ -8,9 +8,10 @@ import threading
 
 
 class VestManager:
-    def __init__(self, qt_mode=False, raspberry_manager=None):
+    def __init__(self, qt_mode=False, raspberry_manager=None, config="one"):
         self.qt_mode = qt_mode
         self.raspberry = raspberry_manager
+        self.config = config
         self.last_gesture = None
         self._running = False
         self._thread = None
@@ -32,7 +33,10 @@ class VestManager:
 
     def _terminal_loop(self):
         """Boucle d'input terminal (mode local uniquement)."""
-        gestes_valides = ["Tape", "Frottement", "Pincement"]
+        if self.config == "all":
+            gestes_valides = ["Tape_Attention", "Calin", "Chatouilles", "Caresse_Reconfortante"]
+        else:
+            gestes_valides = ["Tape", "Frottement", "Pincement"]
         while self._running:
             try:
                 print(f"\n🧤 [VESTE] Entrez un geste ({', '.join(gestes_valides)}) : ", end="", flush=True)

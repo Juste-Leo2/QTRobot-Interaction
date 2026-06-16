@@ -18,7 +18,6 @@ from src.ui import UI
 from src.camera_manager import CameraManager
 from src.vest_manager import VestManager
 from src.audio_manager import AudioManager
-from src.scenario_engine import ScenarioEngine, ScenarioState
 from src.data_acquisition.emotions import EmotionAnalyzer
 from src.data_acquisition.mtcnn_function import detect_faces
 from src.utils import redimensionner_image_pour_ui
@@ -27,12 +26,14 @@ from src.face_tracking import FaceTracker
 
 def parse_args():
     parser = argparse.ArgumentParser(description="QTRobot — Scénarios d'interaction")
-    parser.add_argument("--scenario", type=int, required=True, choices=[1, 2, 3],
-                        help="Numéro du scénario (1, 2 ou 3)")
+    parser.add_argument("--scenario", type=int, required=True, choices=[1, 2, 3, 4],
+                        help="Numéro du scénario (1, 2, 3 ou 4)")
     parser.add_argument("--QT", action="store_true",
                         help="Active le mode QT Robot (ROS + Raspberry Pi)")
     parser.add_argument("--follow", action="store_true",
                         help="Active le suivi du visage du robot (nécessite --QT)")
+    parser.add_argument("--config", nargs='?', default=None,
+                        help="Configuration des scénarios ('all' ou 'one'). Si non spécifié, sera demandé.")
     args = parser.parse_args()
     
     if args.follow and not args.QT:
@@ -45,9 +46,14 @@ def main():
     args = parse_args()
     qt_mode = args.QT
     scenario_id = args.scenario
+    
+    config = args.config
+    while config not in ["all", "one"]:
+        config = input("Veuillez choisir la configuration avec laquelle lancer ('all' ou 'one') : ").strip().lower()
 
     print("=" * 60)
     print(f"  QTRobot — Scénario {scenario_id}")
+    print(f"  Configuration : {config}")
     print(f"  Mode : {'QT (ROS + Raspberry)' if qt_mode else 'Local'}")
     print("=" * 60)
 
@@ -63,20 +69,23 @@ def main():
         ros_client = RemoteRosClient()
         ros_client.wakeup()
 
+        # Choix du script d'inférence sur le Raspberry Pi selon la config
+        inference_script = "/home/qt/Documents/QT-jacket/inference.py" if config == "all" else "/home/qt/Documents/inferenceQT0526.py"
+
         # Config Raspberry Pi pour la veste
         print("\n🧤 Initialisation Raspberry Pi (veste)...")
         raspberry = RaspberryManager(
             ip="192.168.100.3",        # IP du Raspberry
             user="qt",
             password="qtrobot",
-            script_path="/home/qt/Documents/inferenceQT0526.py",
+            script_path=inference_script,
             venv_path="/home/qt/Documents/.venv/bin/activate",
             port=65432
         )
 
     # ─── Initialisation des managers ───
     camera = CameraManager(qt_mode=qt_mode, ros_client=ros_client)
-    vest = VestManager(qt_mode=qt_mode, raspberry_manager=raspberry)
+    vest = VestManager(qt_mode=qt_mode, raspberry_manager=raspberry, config=config)
     audio = AudioManager(
         qt_mode=qt_mode,
         ros_client=ros_client,
@@ -95,6 +104,11 @@ def main():
         app.after(0, app.add_log, text)
 
     # ─── Scénario ───
+    if config == "all":
+        from src.scenario_engine_all import ScenarioEngineAll as ScenarioEngine, ScenarioState
+    else:
+        from src.scenario_engine import ScenarioEngine, ScenarioState
+
     engine = ScenarioEngine(
         scenario_id=scenario_id,
         audio_manager=audio,
@@ -175,7 +189,9 @@ def main():
             # Gestion du Face Tracking
             if tracker:
                 # Si le robot fait autre chose (réaction, conclusion, début), on arrête le suivi
-                if engine.state in [ScenarioState.DEBUT, ScenarioState.REACTION, ScenarioState.CONCLUSION]:
+                # (L'import de ScenarioState est fait conditionnellement plus haut, mais il est local à main().
+                # C'est un peu problématique. Il vaut mieux utiliser une vérification par nom d'état ou importer globalement et conditionnellement)
+                if engine.state.value in ["DEBUT", "REACTION", "CONCLUSION"]:
                     tracker.stop()
                 else:
                     tracker.start()
