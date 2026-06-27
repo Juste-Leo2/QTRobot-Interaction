@@ -79,7 +79,7 @@ def main():
             user="qt",
             password="qtrobot",
             script_path=inference_script,
-            venv_path="/home/qt/Documents/.venv/bin/activate",
+            venv_path="/home/qt/Documents/QT-jacket/.venv/bin/activate",
             port=65432
         )
 

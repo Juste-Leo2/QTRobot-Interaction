@@ -7,6 +7,7 @@ import onnxruntime as ort
 import sys
 import os
 import threading
+import argparse
 
 # --- CONFIGURATION DU SERVEUR ---
 HOST = '0.0.0.0'
@@ -36,7 +37,6 @@ INFERENCE_STRIDE = 300
 # empêche le modèle de monter à 99% de certitude.
 SCORE_THRESHOLD = 0.50        
 
-# Le signal n'est plus divisé par 1023, on remet le seuil d'ADC brut à 0.5
 SEUIL_STABILITE = 0.5       
 
 VOTE_WINDOW_SIZE = 2           
@@ -220,7 +220,7 @@ class GestureThread(threading.Thread):
                                     
                                     if self.client_socket is not None:
                                         try:
-                                            self.client_socket.sendall((nom + '\n').encode('utf-8'))
+                                            self.client_socket.sendall(nom.encode('utf-8'))
                                         except (BrokenPipeError, ConnectionResetError):
                                             self.client_socket = None
                                     
@@ -242,41 +242,52 @@ class GestureThread(threading.Thread):
         self.running = False
 
 if __name__ == "__main__":
-    clear_terminal()
-    print("Initialisation Réseau...")
-    
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    parser = argparse.ArgumentParser(description="Serveur d'inférence veste tactile")
+    parser.add_argument("--local", action="store_true",
+                        help="Mode local : inférence sans connexion réseau")
+    args = parser.parse_args()
 
-    client = None
-    try:
-        server_socket.bind((HOST, PORT))
-        server_socket.listen(1)
-        server_socket.settimeout(1.0) 
-        
-        print(f"En attente de connexion du PC sur {HOST}:{PORT} (Facultatif)...")
-        try:
-            client, addr = server_socket.accept()
-            print(f"--- PC Hôte Connecté : {addr} ---")
-            client.settimeout(None)
-        except socket.timeout:
-            print("--- Aucun PC connecté. Lancement en mode AUTONOME. ---")
-        
-        gesture_thread = GestureThread(client)
+    clear_terminal()
+
+    if args.local:
+        print("--- Mode LOCAL ---")
+        print(f"PID: {os.getpid()}")
+        gesture_thread = GestureThread(client_socket=None)
         gesture_thread.start()
-        
         while gesture_thread.is_alive():
             time.sleep(1)
-            
-    except KeyboardInterrupt:
-        print("\nArrêt manuel demandé par l'utilisateur.")
-    except Exception as e:
-        print(f"Erreur globale dans le Main: {e}")
-    finally:
-        if 'gesture_thread' in locals():
-            gesture_thread.stop()
-            gesture_thread.join()
-        if client is not None:
-            client.close()
-        server_socket.close()
-        print("Serveur éteint proprement.")
+    else:
+        print("--- Mode SERVEUR ---")
+        print(f"PID: {os.getpid()}")
+        print("Initialisation Réseau...")
+
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        client = None
+        try:
+            server_socket.bind((HOST, PORT))
+            server_socket.listen(1)
+
+            print(f"En attente de connexion du PC sur {HOST}:{PORT}...")
+            client, addr = server_socket.accept()
+            print(f"--- PC Hôte Connecté : {addr} ---")
+
+            gesture_thread = GestureThread(client)
+            gesture_thread.start()
+
+            while gesture_thread.is_alive():
+                time.sleep(1)
+
+        except KeyboardInterrupt:
+            print("\nArrêt manuel demandé par l'utilisateur.")
+        except Exception as e:
+            print(f"Erreur globale dans le Main: {e}")
+        finally:
+            if 'gesture_thread' in locals():
+                gesture_thread.stop()
+                gesture_thread.join()
+            if client is not None:
+                client.close()
+            server_socket.close()
+            print("Serveur éteint proprement.")
